@@ -18,6 +18,7 @@ func main() {
 
   for series := range vol.Scan() {
     fmt.Println(series.Count())
+    fmt.Printf("%d - %d\n", series.TsFrom(), series.TsTo())
   }
 
   fmt.Println("ok")

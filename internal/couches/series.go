@@ -32,3 +32,23 @@ func (s *Series) Load(path string) error {
 func (s *Series) Count() int {
   return len(s.records)
 }
+
+func (s *Series) FirstRow() Row {
+  var res Row = s.records[1]
+  return res
+}
+
+func (s *Series) LastRow() Row {
+  var res Row = s.records[s.Count() - 1]
+  return res
+}
+
+func (s *Series) TsFrom() int64 {
+  ts := s.FirstRow().Ts()
+  return ts
+}
+
+func (s *Series) TsTo() int64 {
+  ts := s.LastRow().Ts()
+  return ts
+}

@@ -14,13 +14,16 @@ func NewVolume(path string) *Volume {
   }
 }
 
-func (v *Volume) Read() error {
+func (v *Volume) Path() string {
+  return v.path
+}
+
+func (v *Volume) Read() {
   entries, err := os.ReadDir(v.path)
   if err != nil {
-    return err
+    panic(err)
   }
   v.entries = entries
-  return nil
 }
 
 func (v *Volume) Scan() chan *Series {
@@ -32,14 +35,20 @@ func (v *Volume) Scan() chan *Series {
     for _, entry := range v.entries {
       series := NewSeries()
 
-      err := series.Load(filepath.Join(v.path, entry.Name()))
-      if err != nil {
-        panic(err)
-      }
+      series.Load(filepath.Join(v.path, entry.Name()))
 
       ch <- series
     }
   }()
 
   return ch
+}
+
+func (v *Volume) Write(s *Series) {
+  fd, err := os.OpenFile(filepath.Join(v.Path(), s.Path()), os.O_CREATE|os.O_WRONLY, 0666)
+  if err != nil {
+    panic(err)
+  }
+
+  s.Save(fd)
 }

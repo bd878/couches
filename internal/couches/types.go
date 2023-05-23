@@ -6,5 +6,5 @@ type LogSeries interface {
 }
 
 type Slicer interface {
-  Slice(fromTs int64, toTs int64) (interface{}, error)
+  Slice(fromTs int64, toTs int64) interface{}
 }

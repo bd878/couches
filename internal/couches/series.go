@@ -1,11 +1,13 @@
 package couches
 
+import "fmt"
 import "os"
 import "strconv"
 import "encoding/csv"
 
 type Series struct {
   path string
+  heading []string
   records [][]string
 }
 
@@ -13,27 +15,30 @@ func NewSeries() *Series {
   return &Series{}
 }
 
-func (s *Series) Load(path string) error {
+func (s *Series) Path() string {
+  return s.path
+}
+
+func (s *Series) Load(path string) {
   s.path = path
   fd, err := os.Open(path)
   if err != nil {
-    return err
+    panic(err)
   }
 
   r := csv.NewReader(fd)
   records, err := r.ReadAll()
   if err != nil {
-    return err
+    panic(err)
   }
 
   _, err = strconv.ParseInt(records[0][0], 10, 64) // first is a heading
   if err != nil {
+    s.heading = records[0]
     s.records = records[1:]
   } else {
     s.records = records
   }
-
-  return nil
 }
 
 func (s *Series) Count() int {
@@ -56,7 +61,7 @@ func (s *Series) TsTo() int64 {
   return s.LastRow().Ts()
 }
 
-func (s *Series) Slice(fromTs int64, toTs int64) (interface{}, error) {
+func (s *Series) Slice(path string, fromTs int64, toTs int64) interface{} {
   var records [][]string
 
   for _, rec := range s.records {
@@ -68,8 +73,33 @@ func (s *Series) Slice(fromTs int64, toTs int64) (interface{}, error) {
   }
 
   result := &Series{}
+  result.heading = s.heading
   result.records = records
-  result.path = ""
+  result.path = path
 
-  return result, nil
+  return result
+}
+
+func (s *Series) Save(fd *os.File) {
+  w := csv.NewWriter(fd)
+
+  err := w.Write(s.heading)
+  if err != nil {
+    panic(err)
+  }
+
+  err = w.WriteAll(s.records)
+  if err != nil {
+    panic(err)
+  }
+
+  err = w.Error()
+  if err != nil {
+    panic(err)
+  }
+
+  err = fd.Sync()
+  if err != nil {
+    panic(err)
+  }
 }

@@ -8,7 +8,8 @@ import "fmt"
 import "github.com/bd878/couches/internal/couches"
 
 var (
-  d = flag.String("dir", "./testdata/records", "volumes dir")
+  d = flag.String("in", "./testdata/records", "volumes dir")
+  res = flag.String("out", "./testdata/result", "volumes result dir")
   from = flag.String("from", "", "from ts")
   to = flag.String("to", "", "to ts")
 )
@@ -33,31 +34,34 @@ func main() {
     panic(err)
   }
 
-  var totalCount int
+  err = os.MkdirAll(*res, 0750)
+  if err != nil && !os.IsExist(err) {
+    panic(err)
+  }
+
+  rvol := couches.NewVolume(*res)
 
   for _, entry := range entries {
     vol := couches.NewVolume(filepath.Join(*d, entry.Name()))
 
-    err := vol.Read()
-    if err != nil {
-      panic(err)
-    }
+    vol.Read()
 
     for series := range vol.Scan() {
-      v, err := series.Slice(fromTs, toTs)
-      if err != nil {
-        panic(err)
-      }
+      v := series.Slice(
+        fmt.Sprintf("%s_%d", entry.Name(), series.TsFrom()),
+        fromTs, toTs,
+      )
 
-      res, ok := v.(*couches.Series)
+      s, ok := v.(*couches.Series)
       if !ok {
         panic("not a series")
       }
 
-      totalCount += res.Count()
+      if s.Count() > 0 {
+        rvol.Write(s)
+      }
     }
   }
 
-  fmt.Println(totalCount)
   fmt.Println("ok")
 }

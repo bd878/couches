@@ -2,14 +2,14 @@ package couches
 
 import "strconv"
 
-type Row []string
+type CSVRow []string
 
-func NewRow(str []string) Row {
-  var res Row = str
+func NewCSVRow(str []string) CSVRow {
+  var res CSVRow = str
   return res
 }
 
-func (r Row) Ts() int64 {
+func (r CSVRow) Ts() int64 {
   res, err := strconv.ParseInt(r[0], 10, 64)
   if err != nil {
     panic(err)

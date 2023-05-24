@@ -1,25 +1,25 @@
 package couches
 
-import "fmt"
 import "os"
 import "strconv"
 import "encoding/csv"
 
-type Series struct {
+type CSVSeries struct {
   path string
   heading []string
   records [][]string
+  fd *os.File
 }
 
-func NewSeries() *Series {
-  return &Series{}
+func NewCSVSeries() *CSVSeries {
+  return &CSVSeries{}
 }
 
-func (s *Series) Path() string {
+func (s *CSVSeries) Path() string {
   return s.path
 }
 
-func (s *Series) Load(path string) {
+func (s *CSVSeries) Load(path string) {
   s.path = path
   fd, err := os.Open(path)
   if err != nil {
@@ -39,40 +39,46 @@ func (s *Series) Load(path string) {
   } else {
     s.records = records
   }
+
+  s.fd = fd
 }
 
-func (s *Series) Count() int {
+func (s *CSVSeries) Close() {
+  s.fd.Close()
+}
+
+func (s *CSVSeries) Count() int {
   return len(s.records)
 }
 
-func (s *Series) FirstRow() Row {
-  return NewRow(s.records[1])
+func (s *CSVSeries) FirstRow() LogRow {
+  return NewCSVRow(s.records[1])
 }
 
-func (s *Series) LastRow() Row {
-  return NewRow(s.records[s.Count() - 1])
+func (s *CSVSeries) LastRow() LogRow {
+  return NewCSVRow(s.records[s.Count() - 1])
 }
 
-func (s *Series) TsFrom() int64 {
+func (s *CSVSeries) TsFrom() int64 {
   return s.FirstRow().Ts()
 }
 
-func (s *Series) TsTo() int64 {
+func (s *CSVSeries) TsTo() int64 {
   return s.LastRow().Ts()
 }
 
-func (s *Series) Slice(path string, fromTs int64, toTs int64) interface{} {
+func (s *CSVSeries) Slice(path string, fromTs int64, toTs int64) interface{} {
   var records [][]string
 
   for _, rec := range s.records {
-    row := NewRow(rec)
+    row := NewCSVRow(rec)
     ts := row.Ts()
     if fromTs <= ts && toTs >= ts {
       records = append(records, []string(row))
     }
   }
 
-  result := &Series{}
+  result := &CSVSeries{}
   result.heading = s.heading
   result.records = records
   result.path = path
@@ -80,7 +86,7 @@ func (s *Series) Slice(path string, fromTs int64, toTs int64) interface{} {
   return result
 }
 
-func (s *Series) Save(fd *os.File) {
+func (s *CSVSeries) Save(fd *os.File) {
   w := csv.NewWriter(fd)
 
   err := w.Write(s.heading)

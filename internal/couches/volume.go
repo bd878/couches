@@ -26,16 +26,17 @@ func (v *Volume) Read() {
   v.entries = entries
 }
 
-func (v *Volume) Scan() chan *Series {
-  ch := make(chan *Series)
+func (v *Volume) Scan() chan *CSVSeries {
+  ch := make(chan *CSVSeries)
 
   go func() {
     defer close(ch)
 
     for _, entry := range v.entries {
-      series := NewSeries()
+      series := NewCSVSeries()
 
       series.Load(filepath.Join(v.path, entry.Name()))
+      defer series.Close()
 
       ch <- series
     }
@@ -44,7 +45,7 @@ func (v *Volume) Scan() chan *Series {
   return ch
 }
 
-func (v *Volume) Write(s *Series) {
+func (v *Volume) Write(s *CSVSeries) {
   fd, err := os.OpenFile(filepath.Join(v.Path(), s.Path()), os.O_CREATE|os.O_WRONLY, 0666)
   if err != nil {
     panic(err)

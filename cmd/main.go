@@ -52,7 +52,7 @@ func main() {
         fromTs, toTs,
       )
 
-      s, ok := v.(*couches.Series)
+      s, ok := v.(*couches.CSVSeries)
       if !ok {
         panic("not a series")
       }

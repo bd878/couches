@@ -1,11 +1,15 @@
 package couches
 
-import "encoding/binary"
+import "strings"
+import "strconv"
 import "golang.org/x/exp/mmap"
+
+var sep byte = byte(',')
 
 type MmapRow struct {
   reader *mmap.ReaderAt
   off int
+  ts int64
 }
 
 func NewMmapRow(r *mmap.ReaderAt, off int) *MmapRow {
@@ -15,22 +19,28 @@ func NewMmapRow(r *mmap.ReaderAt, off int) *MmapRow {
   }
 }
 
-func (r *MmapRow) Ts() int64 {
-  b := make([]byte, 0, 8) // int64
+func (r *MmapRow) Read(p []byte) (int, error) {
+  return r.reader.ReadAt(p, int64(r.off))
+}
 
-  n, err := r.reader.ReadAt(b, int64(r.off))
+func (r *MmapRow) Ts() int64 {
+  if r.ts != 0 {
+    return r.ts
+  }
+
+  var builder strings.Builder
+  for i := 0; r.reader.At(r.off + i) != sep; i++ {
+    err := builder.WriteByte(r.reader.At(r.off + i))
+    if err != nil {
+      panic(err)
+    }
+  }
+
+  var err error
+  r.ts, err = strconv.ParseInt(builder.String(), 10, 64)
   if err != nil {
     panic(err)
   }
 
-  if n < len(b) {
-    panic("read less bytes")
-  }
-
-  v, n := binary.Varint(b)
-  if n != len(b) {
-    panic("Varint did not consume all of input")
-  }
-
-  return v
+  return r.ts
 }

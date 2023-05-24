@@ -8,14 +8,26 @@ import "fmt"
 import "github.com/bd878/couches/internal/couches"
 
 var (
-  d = flag.String("in", "./testdata/records", "volumes dir")
-  res = flag.String("out", "./testdata/result", "volumes result dir")
+  outf = flag.String("in", "./testdata/records", "volumes dir")
+  inf = flag.String("out", "./testdata/result", "volumes result dir")
   from = flag.String("from", "", "from ts")
   to = flag.String("to", "", "to ts")
 )
 
 func main() {
   flag.Parse()
+
+  if *from == "" {
+    fmt.Println("no \"from\" flag provided\n")
+    flag.Usage()
+    os.Exit(1)
+  }
+
+  if *to == "" {
+    fmt.Println("no \"out\" flag provided\n")
+    flag.Usage()
+    os.Exit(1)
+  }
 
   var err error
   var fromTs int64
@@ -30,19 +42,19 @@ func main() {
     panic(err)
   }
 
-  if entries, err = os.ReadDir(*d); err != nil {
+  if entries, err = os.ReadDir(*outf); err != nil {
     panic(err)
   }
 
-  err = os.MkdirAll(*res, 0750)
+  err = os.MkdirAll(*inf, 0750)
   if err != nil && !os.IsExist(err) {
     panic(err)
   }
 
-  rvol := couches.NewVolume(*res)
+  rvol := couches.NewVolume(*inf)
 
   for _, entry := range entries {
-    vol := couches.NewVolume(filepath.Join(*d, entry.Name()))
+    vol := couches.NewVolume(filepath.Join(*outf, entry.Name()))
 
     vol.Read()
 

@@ -22,12 +22,20 @@ func (s *MmapSeries) Path() string {
   return s.path
 }
 
-func (s *MmapSeries) RowSize() int {
-  return s.rowSize
+func (s *MmapSeries) RowSize() int64 {
+  return int64(s.rowSize)
+}
+
+func (s *MmapSeries) HeadingOffset() int64 {
+  return int64(s.headingOffset)
 }
 
 func (s *MmapSeries) Close() {
   s.reader.Close()
+}
+
+func (s *MmapSeries) ReaderAt() *mmap.ReaderAt {
+  return s.reader
 }
 
 func (s *MmapSeries) TsFrom() int64 {
@@ -38,11 +46,11 @@ func (s *MmapSeries) TsTo() int64 {
   return s.LastRow().Ts()
 }
 
-func (s *MmapSeries) FirstRow() LogRow {
+func (s *MmapSeries) FirstRow() *MmapRow {
   return NewMmapRow(s.reader, s.headingOffset)
 }
 
-func (s *MmapSeries) LastRow() LogRow {
+func (s *MmapSeries) LastRow() *MmapRow {
   return NewMmapRow(s.reader, s.reader.Len() - s.rowSize)
 }
 
@@ -74,9 +82,12 @@ func (s *MmapSeries) Load(path string) {
   }
   s.headingOffset += 1 // newLine
 
-  for i := 0; r.At(s.headingOffset + i) != newLine; i++ {
-    s.rowSize++
+  for
+    s.rowSize = 0;
+    r.At(s.headingOffset + s.rowSize) != newLine;
+    s.rowSize++ {
   }
+  s.rowSize += 1 // newLine
 
   s.reader = r
 }
